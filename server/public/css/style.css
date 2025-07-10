@@ -1,0 +1,51 @@
+/* Background and base text */
+body {
+    background-color: #000;
+    color: white;
+    font-family: Arial, sans-serif;
+    text-align: center;
+    margin: 0;
+    padding: 20px;
+  }
+  
+  /* Orange heading box */
+  .heading-box {
+    background-color: orange;
+    color: black;
+    padding: 20px;
+    margin-bottom: 30px;
+    border-radius: 10px;
+    width: 60%;
+    margin-left: auto;
+    margin-right: auto;
+    box-shadow: 0 0 10px rgba(255, 165, 0, 0.5);
+  }
+  
+  /* Table styling */
+  table {
+    width: 80%;
+    margin: auto;
+    border-collapse: collapse;
+    background-color: rgba(255, 255, 255, 0.05); /* transparent */
+    border: 2px solid orange;
+    box-shadow: 0 0 15px rgba(255, 165, 0, 0.3);
+  }
+  
+  /* Header row */
+  thead {
+    background-color: rgba(255, 165, 0, 0.2);
+  }
+  
+  th, td {
+    padding: 12px 20px;
+    border: 1px solid orange;
+  }
+  
+  th {
+    font-size: 1.1em;
+  }
+  
+  tr:hover {
+    background-color: rgba(255, 165, 0, 0.1);
+  }
+  

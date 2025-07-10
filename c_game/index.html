@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Light Collector Leaderboard</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    body {
+      background-color: black;
+      color: white;
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin: 0;
+      padding: 0;
+    }
+
+    .heading-box {
+      background: linear-gradient(to right, orange, gold);
+      padding: 20px;
+      color: black;
+      font-size: 26px;
+      font-weight: bold;
+      box-shadow: 0 4px 10px rgba(255, 165, 0, 0.4);
+    }
+
+    .wave-container {
+      line-height: 0;
+    }
+
+    .wave-container svg {
+      display: block;
+      width: 100%;
+      height: auto;
+      background: black;
+    }
+
+    table {
+      margin: 40px auto;
+      border-collapse: collapse;
+      background-color: rgba(255, 255, 255, 0.05); /* transparent effect */
+    }
+
+    th, td {
+      border: 2px solid orange;
+      padding: 12px 24px;
+      font-size: 18px;
+    }
+
+    th {
+      background-color: rgba(255, 165, 0, 0.2);
+      color: white;
+      font-weight: bold;
+    }
+
+    td {
+      color: white;
+    }
+
+    th i {
+      color: white;
+      font-size: 14px;
+      margin-right: 8px;
+    }
+
+    footer {
+      margin-top: 50px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <div class="heading-box">
+    <h1>🏆 Welcome to the Leaderboards 🏆</h1>
+  </div>
+
+  <!-- Top Wave -->
+  <div class="wave-container">
+    <svg viewBox="0 0 1440 150" xmlns="http://www.w3.org/2000/svg">
+      <path fill="orange" fill-opacity="1" d="M0,32L80,37.3C160,43,320,53,480,69.3C640,85,800,107,960,117.3C1120,128,1280,128,1360,128L1440,128L1440,0L1360,0C1280,0,1120,0,960,0C800,0,640,0,480,0C320,0,160,0,80,0L0,0Z"></path>
+    </svg>
+  </div>
+
+  <!-- Leaderboard Table -->
+  <table>
+    <thead>
+      <tr>
+        <th><i class="fas fa-user"></i>Username</th>
+        <th><i class="fas fa-lightbulb"></i>Lights Collected</th>
+        <th><i class="fas fa-bullseye"></i>Score</th>
+      </tr>
+    </thead>
+    <tbody id="leaderboard-body">
+      <!-- Data will be injected here by frontend JS -->
+    </tbody>
+  </table>
+
+  <!-- Bottom Wave Footer -->
+  <footer>
+    <div class="wave-container">
+      <svg viewBox="0 0 1440 150" xmlns="http://www.w3.org/2000/svg" style="transform: rotate(180deg);">
+        <path fill="orange" fill-opacity="1" d="M0,32L80,37.3C160,43,320,53,480,69.3C640,85,800,107,960,117.3C1120,128,1280,128,1360,128L1440,128L1440,0L1360,0C1280,0,1120,0,960,0C800,0,640,0,480,0C320,0,160,0,80,0L0,0Z"></path>
+      </svg>
+    </div>
+  </footer>
+
+  <!-- JavaScript -->
+  <script>
+    fetch('/leaderboard')
+      .then(response => response.json())
+      .then(data => {
+        const tbody = document.getElementById('leaderboard-body');
+        data.forEach(player => {
+          const row = document.createElement('tr');
+
+          const userCell = document.createElement('td');
+          userCell.textContent = player.username;
+          row.appendChild(userCell);
+
+          const lightsCell = document.createElement('td');
+          lightsCell.textContent = player.lights;
+          row.appendChild(lightsCell);
+
+          const scoreCell = document.createElement('td');
+          scoreCell.textContent = player.score;
+          row.appendChild(scoreCell);
+
+          tbody.appendChild(row);
+        });
+      })
+      .catch(error => {
+        console.error('Error loading leaderboard:', error);
+      });
+  </script>
+
+</body>
+</html>
