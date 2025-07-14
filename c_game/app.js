@@ -1,15 +1,17 @@
 const express = require('express');
 const path = require('path');
 const mysql = require('mysql2');
-const cors = require('cors'); // Allow frontend to connect (important!)
+const cors = require('cors');
 
 const app = express();
 const PORT = 4000;
 
-// Enable CORS
+// ✅ Serve static files from "public" folder (this is the fix!)
+app.use(express.static(path.join(__dirname, 'public')));
+
 app.use(cors());
 
-// MySQL connection
+// ✅ MySQL connection
 const connection = mysql.createConnection({
     host: 'phpmyadmin.romangry.fr',
     user: 'fp_1_2',
@@ -17,7 +19,7 @@ const connection = mysql.createConnection({
     database: 'fp_1_2'
 });
 
-// Connect to DB
+// ✅ Connect to DB
 connection.connect((err) => {
     if (err) {
         console.error('❌ MySQL connection failed:', err);
@@ -26,7 +28,7 @@ connection.connect((err) => {
     console.log('✅ Connected to MySQL');
 });
 
-// Route: GET /leaderboard
+// ✅ API Route: GET /leaderboard
 app.get('/leaderboard', (req, res) => {
     const query = `
         SELECT username, lights, score
@@ -45,12 +47,17 @@ app.get('/leaderboard', (req, res) => {
     });
 });
 
-// Serve the HTML file
+// ✅ Route for homepage (index.html)
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Start server
+// ✅ Optional: Direct route for leaderboard.html (in case user types it)
+app.get('/leaderboards.html', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'leaderboards.html'));
+});
+
+// ✅ Start the server
 app.listen(PORT, () => {
     console.log(`🚀 Server running on http://localhost:${PORT}`);
 });

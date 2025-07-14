@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Project 13</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    * {
+      border-radius: 12px;
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: black;
+      color: white;
+      font-family: Arial, sans-serif;
+      text-align: center;
+      overflow-x: hidden;
+    }
+
+    .hero {
+      background: orange;
+      color: black;
+      padding: 15px 10px;
+      display: flex;
+      justify-content: space-evenly;
+      align-items: center;
+      font-weight: bold;
+      font-size: 16px;
+      box-shadow: 0 2px 5px rgba(255, 165, 0, 0.3);
+    }
+
+    .bg-wrapper {
+      position: relative;
+      z-index: 0;
+      overflow: hidden;
+    }
+
+    .bg-wrapper::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 180px; 
+      width: calc(100% - 180px);
+      height: 100%;
+      background-image: url('poster.jpg');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      z-index: -1;
+      opacity: 0.1; 
+      filter: brightness(1.2);
+      border-top-left-radius: 12px;
+    }
+
+    .main-content {
+      display: flex;
+      height: calc(100vh - 130px);
+      align-items: center;
+      justify-content: center;
+      padding: 0 20px;
+    }
+
+    .sidebar {
+      background: orange;
+      padding: 30px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      align-items: center;
+      border-right: 4px solid black;
+      min-width: 180px;
+    }
+
+    .sidebar button {
+      background: transparent;
+      border: 2px solid black;
+      color: black;
+      padding: 10px 16px;
+      font-weight: bold;
+      width: 100%;
+      cursor: default;
+      font-size: 15px;
+    }
+
+    .sidebar button.active {
+      cursor: pointer;
+    }
+
+    .poster-container {
+      flex-grow: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .poster {
+      max-width: 70%;
+      width: 80%;
+      border: none;
+      box-shadow: none;
+      border-radius: 12px;
+    }
+
+    footer {
+      margin-top: 20px;
+      padding: 20px 10px;
+      font-size: 14px;
+      color: #ccc;
+      border-top: 1px solid orange;
+    }
+
+    footer p {
+      margin: 5px 0;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="hero">
+    <span>John Michael Mansanades</span>
+    <span>John Mark Torres</span>
+    <span>Josef Dean Gerald Reyes</span>
+    <span>Danica Gelbolingo</span>
+    <span>Jassy Faburada</span>
+  </div>
+
+  <section class="bg-wrapper">
+    <div class="main-content">
+      <div class="sidebar">
+        <a href="leaderboards.html">
+          <button class="active"><i class="fas fa-trophy"></i> View Leaderboards</button>
+        </a>
+        <button>New Game</button>
+        <button>Buy Characters</button>
+        <button>Settings</button>
+      </div>
+
+      <div class="poster-container">
+        <img src="poster.jpg" alt="Game Poster" class="poster">
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <p>"Catch the lights, dodge the shadows. Only the sharpest make it to the top."</p>
+    <p>&copy; 2025 Team Project 13. All Rights Reserved.</p>
+  </footer>
+
+</body>
+</html>
