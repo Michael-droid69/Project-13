@@ -13,22 +13,17 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(cors());
 app.use(express.json()); // needed to read POST body
 
-const connection = mysql.createConnection({
+const connection = mysql.createPool({
   host:     'interchange.proxy.rlwy.net',
   port:     54430,
   user:     'root',
   password: 'ozNyRifXQvJaGsGuPENChheHppDisAYj',
-  database: 'railway'
+  database: 'railway',
+  waitForConnections: true,
+  connectionLimit: 10,
 });
 
-connection.connect((err) => {
-  if (err) {
-    console.error('❌ MySQL connection failed:', err);
-    return;
-  }
-  console.log('✅ Connected to MySQL');
-});
-
+console.log('✅ MySQL pool created');
 // ─── ROUTE: Homepage ─────────────────────────────────────────
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
