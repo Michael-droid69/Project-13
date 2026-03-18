@@ -35,19 +35,29 @@ const BEHAVIORS = [
 const OBSTACLES = ['rock', 'crack', 'spikes', 'hole', 'fire'];
 const TRAPS     = ['birds', 'missile', 'fallen tree', 'barbwire'];
 
-// ─── Game State ─────────────────────────────────────────────
-let state = 'idle'; // idle | running | dead
+// ─── Character Image ─────────────────────────────────────────
+// ─── URL Params ──────────────────────────────────────────────
+const params  = new URLSearchParams(window.location.search);
+let username  = params.get('username') || 'Player';
+const charImg = params.get('charImg')  || 'assets/characters/kyle.png';
+
+// ─── Character Image ─────────────────────────────────────────
+const ballImage = new Image();
+ballImage.src = charImg;
+let imageLoaded = false;
+ballImage.onload = () => { imageLoaded = true; };
+
+// ─── Game State ──────────────────────────────────────────────
+let state = 'idle';
 let ball, obstacleList, lightList, particleList;
 let score, lightsCollected, gameSpeed, frameCount;
 let ballGlowColor;
 let duckHeld;
 let spawnTimer, lightTimer;
-let username = 'Player';
 let collectedColors = [];
 let promptTimeout = null;
 let bgOffset = 0;
 let buildingOffsets = [0, 150, 300, 450, 600, 750];
-
 // ─── Init ────────────────────────────────────────────────────
 function initGame() {
   ball = {
@@ -398,36 +408,35 @@ function drawBall() {
   ctx.translate(b.x, by);
   ctx.rotate(b.angle);
 
-  // Glow
+  // Glow effect
   ctx.shadowColor = ballGlowColor;
   ctx.shadowBlur  = 14;
 
-  // Ball body
+  // Clip into circle
   ctx.beginPath();
   ctx.arc(0, 0, br, 0, Math.PI * 2);
-  ctx.fillStyle = '#d8d8d8';
-  ctx.fill();
-  ctx.strokeStyle = '#777';
-  ctx.lineWidth = 1.5;
-  ctx.stroke();
+  ctx.clip();
+
+  if (imageLoaded) {
+    // Draw Kyle as the ball
+    ctx.drawImage(ballImage, -br, -br, br * 2, br * 2);
+  } else {
+    // Fallback plain ball if image not loaded
+    ctx.fillStyle = '#d8d8d8';
+    ctx.fill();
+  }
 
   ctx.shadowBlur = 0;
+  ctx.restore();
 
-  // Cross lines on ball
-  ctx.strokeStyle = 'rgba(0,0,0,0.25)';
-  ctx.lineWidth = 1;
+  // Circle border
+  ctx.save();
+  ctx.translate(b.x, by);
   ctx.beginPath();
-  ctx.moveTo(-br * 0.65, 0); ctx.lineTo(br * 0.65, 0);
-  ctx.moveTo(0, -br * 0.65); ctx.lineTo(0, br * 0.65);
+  ctx.arc(0, 0, br, 0, Math.PI * 2);
+  ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+  ctx.lineWidth = 2;
   ctx.stroke();
-
-  // Inner circle
-  ctx.beginPath();
-  ctx.arc(0, 0, br * 0.45, 0, Math.PI * 2);
-  ctx.strokeStyle = 'rgba(0,0,0,0.15)';
-  ctx.lineWidth = 1;
-  ctx.stroke();
-
   ctx.restore();
 
   // Ground shadow
@@ -559,18 +568,40 @@ function loop() {
   requestAnimationFrame(loop);
 }
 
-// ─── Event Listeners ────────────────────────────────────────
-document.getElementById('startBtn').addEventListener('click', () => {
-  const input = document.getElementById('usernameInput').value.trim();
-  if (!input) {
-    document.getElementById('usernameInput').focus();
-    return;
-  }
-  username = input;
-  document.getElementById('overlay').style.display = 'none';
-  initGame();
-});
+const startBtnEl = document.getElementById('startBtn');
+if (startBtnEl) {
+  startBtnEl.addEventListener('click', () => {
+    document.getElementById('overlay').style.display = 'none';
+    initGame();
+  });
+}
 
+// Auto start if coming from character select
+window.addEventListener('load', () => {
+  if (params.get('username')) {
+    document.getElementById('overlayTitle').textContent   = 'READY?';
+    document.getElementById('overlayDesc').innerHTML      = `
+      Rolling as <strong style="color:#f0c040">${username}</strong><br/>
+      Jump over obstacles. Duck under traps.<br/>
+      <span class="danger">Avoid the black light.</span>
+    `;
+    document.getElementById('playAgainBtn').style.display = 'none';
+    document.getElementById('nameForm').style.display     = 'none';
+
+    const readyBtn = document.createElement('button');
+    readyBtn.textContent = "LET'S GO!";
+    readyBtn.style.cssText = `
+      background: #f0c040; color: #111; border: none;
+      padding: 10px 36px; font-size: 14px; font-weight: bold;
+      border-radius: 4px; cursor: pointer; font-family: monospace;
+    `;
+    readyBtn.addEventListener('click', () => {
+      document.getElementById('overlay').style.display = 'none';
+      initGame();
+    });
+    document.getElementById('overlayButtons').prepend(readyBtn);
+  }
+});
 document.getElementById('playAgainBtn').addEventListener('click', () => {
   document.getElementById('overlay').style.display       = 'none';
   document.getElementById('gameOverStats').style.display = 'none';
@@ -608,9 +639,12 @@ document.addEventListener('keyup', e => {
   if (e.code === 'ArrowDown') duck(false);
 });
 
-document.getElementById('usernameInput').addEventListener('keydown', e => {
-  if (e.code === 'Enter') document.getElementById('startBtn').click();
-});
+const usernameInputEl = document.getElementById('usernameInput');
+if (usernameInputEl) {
+  usernameInputEl.addEventListener('keydown', e => {
+    if (e.code === 'Enter') document.getElementById('startBtn').click();
+  });
+}
 
 // ─── Start Loop ──────────────────────────────────────────────
 loop();

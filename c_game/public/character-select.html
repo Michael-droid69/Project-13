@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Project 13 - Choose Your Character</title>
+  <link rel="stylesheet" href="character-select.css"/>
+</head>
+<body>
+
+  <a href="index.html" id="backBtn">← Back to Menu</a>
+
+  <p id="pageTitle">PROJECT 13</p>
+  <p id="pageSubtitle">CHOOSE YOUR CHARACTER</p>
+
+  <!-- Name Input -->
+  <div id="nameSection">
+    <p id="nameLabel">WHAT'S YOUR NAME?</p>
+    <input type="text" id="usernameInput" placeholder="Enter your name" maxlength="20"/>
+  </div>
+
+  <p id="selectLabel">SELECT CHARACTER</p>
+
+  <!-- Carousel -->
+  <div id="carouselWrapper">
+    <button class="arrow" id="leftArrow">&#8592;</button>
+
+    <div id="carousel">
+      <!-- Characters injected by JS -->
+    </div>
+
+    <button class="arrow" id="rightArrow">&#8594;</button>
+  </div>
+
+  <!-- Dot indicators -->
+  <div id="dots"></div>
+
+  <!-- Start Button -->
+  <button id="startBtn" disabled>SELECT A CHARACTER</button>
+
+  <script>
+    // ─── Character Data ───────────────────────────────────────
+    const characters = [
+      { id: 'kyle',   name: 'Kyle',   img: 'assets/characters/kyle.png', locked: false },
+      { id: 'char2',  name: '???',    img: '', locked: true },
+      { id: 'char3',  name: '???',    img: '', locked: true },
+      { id: 'char4',  name: '???',    img: '', locked: true },
+      { id: 'char5',  name: '???',    img: '', locked: true },
+      { id: 'char6',  name: '???',    img: '', locked: true },
+      { id: 'char7',  name: '???',    img: '', locked: true },
+      { id: 'char8',  name: '???',    img: '', locked: true },
+      { id: 'char9',  name: '???',    img: '', locked: true },
+      { id: 'char10', name: '???',    img: '', locked: true },
+      { id: 'char11', name: '???',    img: '', locked: true },
+      { id: 'char12', name: '???',    img: '', locked: true },
+      { id: 'char13', name: '???',    img: '', locked: true },
+    ];
+
+    let selectedChar = null;
+    let currentPage  = 0;
+    const perPage    = 4;
+    const totalPages = Math.ceil(characters.length / perPage);
+
+    // ─── Build Carousel ───────────────────────────────────────
+    function buildCarousel() {
+      const carousel = document.getElementById('carousel');
+      carousel.innerHTML = '';
+
+      const start = currentPage * perPage;
+      const end   = Math.min(start + perPage, characters.length);
+      const visible = characters.slice(start, end);
+
+      visible.forEach((char, i) => {
+        const card = document.createElement('div');
+        card.className = 'char-card' + (char.locked ? ' locked' : '') + (selectedChar === char.id ? ' selected' : '');
+        card.dataset.id = char.id;
+
+        const circle = document.createElement('div');
+        circle.className = 'char-circle';
+
+        if (char.locked) {
+          // Silhouette
+          const sil = document.createElement('div');
+          sil.className = 'char-silhouette';
+          circle.appendChild(sil);
+
+          // Lock overlay
+          const overlay = document.createElement('div');
+          overlay.className = 'lock-overlay';
+          overlay.innerHTML = '<span class="lock-icon">🔒</span>';
+          circle.appendChild(overlay);
+
+        } else {
+          // Character image
+          const img = document.createElement('img');
+          img.src = char.img;
+          img.alt = char.name;
+          circle.appendChild(img);
+        }
+
+        // Check mark if selected
+        const check = document.createElement('p');
+        check.className = 'char-check';
+        check.textContent = selectedChar === char.id ? '● SELECTED' : '';
+
+        // Name
+        const name = document.createElement('p');
+        name.className = 'char-name';
+        name.textContent = char.name;
+
+        card.appendChild(circle);
+        card.appendChild(check);
+        card.appendChild(name);
+
+        // Click handler
+        if (!char.locked) {
+          card.addEventListener('click', () => selectChar(char.id));
+        }
+
+        carousel.appendChild(card);
+      });
+
+      buildDots();
+    }
+
+    // ─── Build Dots ───────────────────────────────────────────
+    function buildDots() {
+      const dots = document.getElementById('dots');
+      dots.innerHTML = '';
+      for (let i = 0; i < totalPages; i++) {
+        const dot = document.createElement('div');
+        dot.className = 'dot' + (i === currentPage ? ' active' : '');
+        dot.addEventListener('click', () => { currentPage = i; buildCarousel(); });
+        dots.appendChild(dot);
+      }
+    }
+
+    // ─── Select Character ─────────────────────────────────────
+    function selectChar(id) {
+      selectedChar = id;
+      buildCarousel();
+      const btn = document.getElementById('startBtn');
+      btn.textContent = 'START ROLLING';
+      btn.disabled = false;
+    }
+
+    // ─── Arrows ───────────────────────────────────────────────
+    document.getElementById('leftArrow').addEventListener('click', () => {
+      if (currentPage > 0) { currentPage--; buildCarousel(); }
+    });
+
+    document.getElementById('rightArrow').addEventListener('click', () => {
+      if (currentPage < totalPages - 1) { currentPage++; buildCarousel(); }
+    });
+
+    // ─── Start Button ─────────────────────────────────────────
+    document.getElementById('startBtn').addEventListener('click', () => {
+      const name = document.getElementById('usernameInput').value.trim();
+
+      if (!name) {
+        document.getElementById('usernameInput').focus();
+        document.getElementById('usernameInput').style.borderColor = '#ff4444';
+        setTimeout(() => {
+          document.getElementById('usernameInput').style.borderColor = '#333';
+        }, 1500);
+        return;
+      }
+
+      if (!selectedChar) return;
+
+      const char = characters.find(c => c.id === selectedChar);
+
+      // Pass name and character to game.html via URL params
+      const params = new URLSearchParams({
+        username: name,
+        charId:   char.id,
+        charImg:  char.img,
+        charName: char.name,
+      });
+
+      window.location.href = 'game.html?' + params.toString();
+    });
+
+    // ─── Enter key submits ────────────────────────────────────
+    document.getElementById('usernameInput').addEventListener('keydown', e => {
+      if (e.code === 'Enter') document.getElementById('startBtn').click();
+    });
+
+    // ─── Init ─────────────────────────────────────────────────
+    buildCarousel();
+  </script>
+
+</body>
+</html>
