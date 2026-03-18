@@ -14,10 +14,11 @@ app.use(cors());
 app.use(express.json()); // needed to read POST body
 
 const connection = mysql.createConnection({
-  host:     'localhost',
+  host:     'interchange.proxy.rlwy.net',
+  port:     54430,
   user:     'root',
-  password: 'root',
-  database: 'project13'
+  password: 'ozNyRifXQvJaGsGuPENChheHppDisAYj',
+  database: 'railway'
 });
 
 connection.connect((err) => {

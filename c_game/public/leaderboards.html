@@ -197,7 +197,7 @@
 
   <script>
     function syncScores() {
-  fetch('http://localhost:4000/sync-scores')
+      fetch('/sync-scores')
     .then(r => r.json())
     .then(d => {
       alert('Scores synced! Reloading leaderboard...');
