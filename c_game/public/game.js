@@ -51,10 +51,19 @@ const charImg = params.get('charImg')  || 'assets/characters/kyle.png';
 
 // ─── Character Image ─────────────────────────────────────────
 const ballImage = new Image();
-ballImage.src = charImg;
+
+if (charImg === 'custom') {
+  // Load from localStorage
+  const customImg = localStorage.getItem('customCharImg');
+  if (customImg) {
+    ballImage.src = customImg;
+  }
+} else {
+  ballImage.src = charImg;
+}
+
 let imageLoaded = false;
 ballImage.onload = () => { imageLoaded = true; };
-
 // ─── Game State ──────────────────────────────────────────────
 let state = 'idle';
 let ball, obstacleList, lightList, particleList;

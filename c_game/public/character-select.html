@@ -20,7 +20,19 @@
   </div>
 
   <p id="selectLabel">SELECT CHARACTER</p>
-
+<!-- Upload Custom Character -->
+<div id="uploadSection">
+<p id="uploadLabel">── OR ──</p>  <label id="uploadBtn" for="photoUpload">
+    📷 Use Your Own Photo
+  </label>
+  <input type="file" id="photoUpload" accept="image/*" style="display:none;"/>
+  <div id="previewContainer" style="display:none;">
+    <canvas id="previewCanvas" width="80" height="80"></canvas>
+    <p id="previewLabel">Custom</p>
+    <button id="useCustomBtn">✔ Use This</button>
+    <button id="clearCustomBtn">✕ Remove</button>
+  </div>
+</div>
   <!-- Carousel -->
   <div id="carouselWrapper">
     <button class="arrow" id="leftArrow">&#8592;</button>
@@ -169,15 +181,24 @@ const perPage = window.innerWidth < 600 ? 3 : 4;    const totalPages = Math.ceil
 
       const char = characters.find(c => c.id === selectedChar);
 
-      // Pass name and character to game.html via URL params
-      const params = new URLSearchParams({
-        username: name,
-        charId:   char.id,
-        charImg:  char.img,
-        charName: char.name,
-      });
-
-      window.location.href = 'game.html?' + params.toString();
+     if (selectedChar === 'custom') {
+  const params = new URLSearchParams({
+    username: name,
+    charId:   'custom',
+    charImg:  'custom',
+    charName: 'Custom',
+  });
+  window.location.href = 'game.html?' + params.toString();
+} else {
+  const char = characters.find(c => c.id === selectedChar);
+  const params = new URLSearchParams({
+    username: name,
+    charId:   char.id,
+    charImg:  char.img,
+    charName: char.name,
+  });
+  window.location.href = 'game.html?' + params.toString();
+}
     });
 
     // ─── Enter key submits ────────────────────────────────────
@@ -185,8 +206,84 @@ const perPage = window.innerWidth < 600 ? 3 : 4;    const totalPages = Math.ceil
       if (e.code === 'Enter') document.getElementById('startBtn').click();
     });
 
-    // ─── Init ─────────────────────────────────────────────────
-    buildCarousel();
+// ─── Custom Photo Upload ──────────────────────────────────
+let customImageData = null;
+
+document.getElementById('photoUpload').addEventListener('change', function() {
+  const file = this.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const img = new Image();
+    img.onload = function() {
+      // Draw image as circle on preview canvas
+      const previewCanvas = document.getElementById('previewCanvas');
+      const ctx = previewCanvas.getContext('2d');
+
+      ctx.clearRect(0, 0, 80, 80);
+
+      // Clip to circle
+      ctx.beginPath();
+      ctx.arc(40, 40, 40, 0, Math.PI * 2);
+      ctx.clip();
+
+      // Draw image centered and cropped
+      const size = Math.min(img.width, img.height);
+      const sx   = (img.width  - size) / 2;
+      const sy   = (img.height - size) / 2;
+      ctx.drawImage(img, sx, sy, size, size, 0, 0, 80, 80);
+
+      // Save base64 data
+      customImageData = previewCanvas.toDataURL('image/png');
+
+      // Show preview
+      document.getElementById('previewContainer').style.display = 'flex';
+      document.getElementById('uploadBtn').style.display = 'none';
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+});
+
+// ─── Use Custom Button ────────────────────────────────────
+document.getElementById('useCustomBtn').addEventListener('click', () => {
+  if (!customImageData) return;
+
+  // Store in localStorage for game.js to read
+  localStorage.setItem('customCharImg', customImageData);
+  localStorage.setItem('customCharName', 'Custom');
+
+  // Mark as selected
+  selectedChar = 'custom';
+
+  // Deselect all cards
+  document.querySelectorAll('.char-card').forEach(c => c.classList.remove('selected'));
+
+  // Enable start button
+  const btn = document.getElementById('startBtn');
+  btn.textContent = 'START ROLLING';
+  btn.disabled = false;
+
+  // Show confirmed label
+  document.getElementById('previewLabel').textContent = '✔ SELECTED';
+});
+
+// ─── Clear Custom Button ──────────────────────────────────
+document.getElementById('clearCustomBtn').addEventListener('click', () => {
+  customImageData = null;
+  localStorage.removeItem('customCharImg');
+  localStorage.removeItem('customCharName');
+  selectedChar = null;
+
+  document.getElementById('previewContainer').style.display = 'none';
+  document.getElementById('uploadBtn').style.display = 'block';
+  document.getElementById('previewLabel').textContent = 'Custom';
+
+  const btn = document.getElementById('startBtn');
+  btn.textContent = 'SELECT A CHARACTER';
+  btn.disabled = true;
+});    buildCarousel();
   </script>
 
 </body>
