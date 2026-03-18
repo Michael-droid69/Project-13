@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Project 13 - Adventure Mode</title>
+  <link rel="stylesheet" href="game.css"/>
+</head>
+<body>
+
+  <a href="index.html" id="backBtn">← Back to Menu</a>
+
+  <div id="gameWrapper">
+    <canvas id="gameCanvas"></canvas>
+
+    <!-- HUD -->
+    <div id="hud">
+      <div class="hud-box">Score: <span id="scoreVal">0</span></div>
+      <div class="hud-box">Player: <span id="playerName">-</span></div>
+      <div class="hud-box">Lights: <span id="lightsVal">0</span></div>
+      <div class="hud-box">Speed: <span id="speedVal">1.0x</span></div>
+    </div>
+
+    <!-- Light collection dots -->
+    <div id="lightBar"></div>
+
+    <!-- Prompt popup -->
+    <div id="promptBox"></div>
+
+    <!-- Controls -->
+    <div id="controls">
+      <button id="jumpBtn">▲ JUMP (Space / Up)</button>
+      <button id="duckBtn">▼ DUCK (Down)</button>
+    </div>
+
+    <!-- Overlay always visible at start -->
+    <div id="overlay" style="display:flex;">
+
+      <h2 id="overlayTitle">ADVENTURE MODE</h2>
+
+      <p id="overlayDesc">
+        The ball rolls forever through the wasteland.<br/>
+        Jump over ground obstacles. Duck under aerial traps.<br/>
+        Collect lights. <span class="danger">Avoid the black light — it means death.</span>
+      </p>
+
+      <!-- Name input — shown on start screen -->
+      <div id="nameForm" style="display:flex;">
+        <input type="text" id="usernameInput" placeholder="Enter your name" maxlength="20"/>
+        <button id="startBtn">START ROLLING</button>
+      </div>
+
+      <!-- Stats — hidden until game over -->
+      <div id="gameOverStats" style="display:none;">
+        <p>Final Score: <span id="finalScore">0</span></p>
+        <p>Lights Collected: <span id="finalLights">0</span></p>
+      </div>
+
+      <div id="overlayButtons">
+        <button id="playAgainBtn" style="display:none;">PLAY AGAIN</button>
+        <button id="menuBtn" onclick="window.location.href='index.html'">← Main Menu</button>
+      </div>
+
+    </div>
+
+  </div>
+
+  <script src="game.js"></script>
+  <script src="game-api.js"></script>
+
+</body>
+</html>

@@ -41,7 +41,7 @@
       content: "";
       position: absolute;
       top: 0;
-      left: 180px; 
+      left: 180px;
       width: calc(100% - 180px);
       height: 100%;
       background-image: url('poster.jpg');
@@ -49,7 +49,7 @@
       background-position: center;
       background-repeat: no-repeat;
       z-index: -1;
-      opacity: 0.1; 
+      opacity: 0.1;
       filter: brightness(1.2);
       border-top-left-radius: 12px;
     }
@@ -114,10 +114,135 @@
     footer p {
       margin: 5px 0;
     }
+
+    /* ─── Modal Backdrop ─────────────────────────────────────── */
+    #modalBackdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      border-radius: 0;
+    }
+
+    #modalBackdrop.open {
+      display: flex;
+    }
+
+    /* ─── Modal Box ──────────────────────────────────────────── */
+    #gameModal {
+      background: #111;
+      border: 1px solid #333;
+      border-radius: 16px;
+      padding: 40px 36px;
+      max-width: 600px;
+      width: 90%;
+      text-align: center;
+    }
+
+    #gameModal h2 {
+      font-size: 22px;
+      color: orange;
+      letter-spacing: 2px;
+      margin-bottom: 8px;
+      border-radius: 0;
+    }
+
+    #gameModal p {
+      font-size: 13px;
+      color: #777;
+      margin-bottom: 28px;
+      border-radius: 0;
+    }
+
+    /* ─── Mode Cards ─────────────────────────────────────────── */
+    .mode-cards {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .mode-card {
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      border-radius: 12px;
+      padding: 28px 24px;
+      width: 220px;
+      cursor: pointer;
+      transition: border-color 0.2s, transform 0.15s;
+      text-align: center;
+      text-decoration: none;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .mode-card:hover {
+      border-color: orange;
+      transform: translateY(-3px);
+    }
+
+    .mode-card .mode-icon {
+      font-size: 32px;
+      border-radius: 0;
+    }
+
+    .mode-card h3 {
+      font-size: 16px;
+      color: orange;
+      margin: 0;
+      letter-spacing: 1px;
+      border-radius: 0;
+    }
+
+    .mode-card p {
+      font-size: 12px;
+      color: #666;
+      margin: 0;
+      line-height: 1.6;
+      border-radius: 0;
+    }
+
+    .mode-card .mode-tag {
+      font-size: 10px;
+      background: rgba(255, 165, 0, 0.12);
+      color: orange;
+      border: 1px solid rgba(255, 165, 0, 0.3);
+      padding: 3px 10px;
+      border-radius: 20px;
+      margin-top: 4px;
+    }
+
+    /* ─── Close Button ───────────────────────────────────────── */
+    #closeModal {
+      margin-top: 24px;
+      background: transparent;
+      border: 1px solid #333;
+      color: #666;
+      padding: 8px 24px;
+      font-size: 13px;
+      cursor: pointer;
+      border-radius: 8px;
+      font-family: Arial, sans-serif;
+      transition: color 0.2s, border-color 0.2s;
+    }
+
+    #closeModal:hover {
+      color: #ccc;
+      border-color: #555;
+    }
   </style>
 </head>
 <body>
 
+  <!-- ─── Header ──────────────────────────────────────────── -->
   <div class="hero">
     <span>John Michael Mansanades</span>
     <span>John Mark Torres</span>
@@ -126,13 +251,14 @@
     <span>Jassy Faburada</span>
   </div>
 
+  <!-- ─── Main ────────────────────────────────────────────── -->
   <section class="bg-wrapper">
     <div class="main-content">
       <div class="sidebar">
         <a href="leaderboards.html">
           <button class="active"><i class="fas fa-trophy"></i> View Leaderboards</button>
         </a>
-        <button>New Game</button>
+        <button class="active" onclick="openGameModal()">New Game</button>
         <button>Buy Characters</button>
         <button>Settings</button>
       </div>
@@ -143,10 +269,85 @@
     </div>
   </section>
 
+  <!-- ─── Footer ──────────────────────────────────────────── -->
   <footer>
     <p>"Catch the lights, dodge the shadows. Only the sharpest make it to the top."</p>
     <p>&copy; 2025 Team Project 13. All Rights Reserved.</p>
   </footer>
+
+  <!-- ─── New Game Modal ───────────────────────────────────── -->
+  <div id="modalBackdrop">
+    <div id="gameModal">
+      <h2>SELECT GAME MODE</h2>
+      <p>Choose how you want to play Project 13</p>
+
+      <div class="mode-cards">
+
+        <!-- Story Mode -->
+        <div class="mode-card" onclick="launchStoryMode()">
+          <div class="mode-icon">📖</div>
+          <h3>STORY MODE</h3>
+          <p>Decision-based gameplay with a timer. Choose wisely — every choice matters.</p>
+          <span class="mode-tag">C-based · Text driven</span>
+          <p id="storyStatus" style="display:none; color:#00c864; font-size:11px; margin-top:6px;"></p>
+        </div>
+
+        <!-- Adventure Mode -->
+        <a class="mode-card" href="game.html">
+          <div class="mode-icon">🎮</div>
+          <h3>ADVENTURE MODE</h3>
+          <p>Side-scrolling action. Roll, jump, duck and collect lights in the wasteland.</p>
+          <span class="mode-tag">Browser · Platformer</span>
+        </a>
+
+      </div>
+
+      <button id="closeModal" onclick="closeGameModal()">✕ Cancel</button>
+    </div>
+  </div>
+
+  <script>
+    // ─── Modal Controls ───────────────────────────────────────
+    function openGameModal() {
+      document.getElementById('modalBackdrop').classList.add('open');
+    }
+
+    function closeGameModal() {
+      document.getElementById('modalBackdrop').classList.remove('open');
+    }
+
+    // Close modal if clicking outside the box
+    document.getElementById('modalBackdrop').addEventListener('click', function (e) {
+      if (e.target === this) closeGameModal();
+    });
+
+    // ─── Story Mode Launcher ──────────────────────────────────
+    // Calls the backend to launch game.exe
+    function launchStoryMode() {
+  fetch('http://localhost:4000/launch-story')
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        // Show a message that the game launched
+        document.getElementById('storyStatus').textContent = 'Game launched! Play in the terminal window.';
+        document.getElementById('storyStatus').style.display = 'block';
+
+        // After 10 seconds sync the scores to MySQL
+        setTimeout(() => {
+          fetch('http://localhost:4000/sync-scores')
+            .then(r => r.json())
+            .then(d => console.log('Scores synced:', d));
+        }, 10000);
+
+      } else {
+        alert('Could not launch Story Mode. Make sure the server is running.');
+      }
+    })
+    .catch(() => {
+      alert('Could not connect to server. Is it running?\n\nRun: node app.js');
+    });
+}
+  </script>
 
 </body>
 </html>

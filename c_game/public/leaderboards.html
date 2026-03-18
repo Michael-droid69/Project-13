@@ -173,6 +173,18 @@
       <button class="close-btn" onclick="closePopup()">Close</button>
     </div>
   </div>
+  <button onclick="syncScores()" style="
+  display: inline-block;
+  margin: 10px auto;
+  padding: 10px 20px;
+  background-color: #222;
+  color: orange;
+  font-weight: bold;
+  border: 1px solid orange;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+">🔄 Sync Story Mode Scores</button>
   <a href="index.html" class="back-home-btn">← Back to Home</a>
 
   <footer>
@@ -184,6 +196,15 @@
   </footer>
 
   <script>
+    function syncScores() {
+  fetch('http://localhost:4000/sync-scores')
+    .then(r => r.json())
+    .then(d => {
+      alert('Scores synced! Reloading leaderboard...');
+      location.reload();
+    })
+    .catch(() => alert('Could not sync. Is the server running?'));
+}
     function showPopup(player) {
       document.getElementById('popup-username').textContent = player.username;
       document.getElementById('popup-lights').textContent = "Lights Collected: " + player.lights;
@@ -195,11 +216,12 @@
       document.getElementById('popup-overlay').style.display = 'none';
     }
 
-    fetch('/leaderboard')
-      .then(response => response.json())
-      .then(data => {
-        const tbody = document.getElementById('leaderboard-body');
-        data.forEach(player => {
+ fetch('/leaderboard')
+  .then(response => response.json())
+  .then(data => {
+    const tbody = document.getElementById('leaderboard-body');
+    const scores = data.scores || data;
+    scores.forEach(player => {
           const row = document.createElement('tr');
           row.innerHTML = `
             <td>${player.username}</td>
@@ -213,6 +235,7 @@
       .catch(error => {
         console.error('Error loading leaderboard:', error);
       });
+  
   </script>
 
 </body>
