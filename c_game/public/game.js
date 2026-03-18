@@ -16,6 +16,14 @@ const BALL_X    = () => canvas.width  * 0.18;
 const GRAVITY   = 0.55;
 const JUMP_FORCE = -13;
 
+// ─── Obstacle Images ─────────────────────────────────────────
+const rockImages = [];
+for (let i = 1; i <= 5; i++) {
+  const img = new Image();
+  img.src = `assets/obstacles/rock${i}.png`;
+  rockImages.push(img);
+}
+
 const BEHAVIORS = [
   { color: '#FF69B4', name: 'Pink',   meaning: 'Love',       score: 20 },
   { color: '#66BB6A', name: 'Green',  meaning: 'Peace',      score: 15 },
@@ -181,13 +189,18 @@ function spawnObstacle() {
   } else {
     const obs = OBSTACLES[Math.floor(Math.random() * OBSTACLES.length)];
     const oh  = 28 + Math.random() * 20;
-    obstacleList.push({
-      x: w + 40,
-      y: GROUND_Y() - oh + 18,
-      w: 40, h: oh,
-      type: 'ground',
-      label: obs,
-    });
+   const isRock = obs === 'rock';
+const rockImg = isRock ? rockImages[Math.floor(Math.random() * rockImages.length)] : null;
+
+obstacleList.push({
+  x: w + 40,
+  y: GROUND_Y() - oh + 18,
+  w: isRock ? 55 : 40,
+  h: oh,
+  type: 'ground',
+  label: obs,
+  rockImg: rockImg,
+});
   }
 }
 
@@ -472,24 +485,27 @@ function drawObstacles() {
       ctx.fillText('↓ DUCK', o.x + o.w / 2, o.y - 6);
 
     } else {
-      // Ground obstacle box
-      ctx.fillStyle   = '#2a2a2a';
-      ctx.strokeStyle = '#4a4a4a';
-      ctx.lineWidth   = 1;
-      ctx.fillRect  (o.x, o.y, o.w, o.h);
-      ctx.strokeRect(o.x, o.y, o.w, o.h);
-
-      // Label
-      ctx.fillStyle  = '#aaaaaa';
-      ctx.font       = 'bold 10px monospace';
-      ctx.textAlign  = 'center';
-      ctx.fillText(o.label, o.x + o.w / 2, o.y + o.h / 2 + 4);
-
-      // JUMP hint
-      ctx.fillStyle = '#00ff88';
-      ctx.font      = '9px monospace';
-      ctx.fillText('↑ JUMP', o.x + o.w / 2, o.y - 6);
-    }
+  if (o.label === 'rock' && o.rockImg && o.rockImg.complete) {
+    // Draw rock image
+    ctx.drawImage(o.rockImg, o.x, o.y, o.w, o.h);
+  } else {
+    // Fallback box for non-rock obstacles
+    ctx.fillStyle   = '#2a2a2a';
+    ctx.strokeStyle = '#4a4a4a';
+    ctx.lineWidth   = 1;
+    ctx.fillRect  (o.x, o.y, o.w, o.h);
+    ctx.strokeRect(o.x, o.y, o.w, o.h);
+    ctx.fillStyle  = '#aaaaaa';
+    ctx.font       = 'bold 10px monospace';
+    ctx.textAlign  = 'center';
+    ctx.fillText(o.label, o.x + o.w / 2, o.y + o.h / 2 + 4);
+  }
+  // JUMP hint
+  ctx.fillStyle = '#00ff88';
+  ctx.font      = '9px monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText('↑ JUMP', o.x + o.w / 2, o.y - 6);
+}
 
     ctx.restore();
   });
