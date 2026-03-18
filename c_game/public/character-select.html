@@ -58,8 +58,7 @@
 
     let selectedChar = null;
     let currentPage  = 0;
-    const perPage    = 4;
-    const totalPages = Math.ceil(characters.length / perPage);
+const perPage = window.innerWidth < 600 ? 3 : 4;    const totalPages = Math.ceil(characters.length / perPage);
 
     // ─── Build Carousel ───────────────────────────────────────
     function buildCarousel() {
