@@ -77,6 +77,7 @@ let bgOffset = 0;
 let buildingOffsets = [0, 150, 300, 450, 600, 750];
 // ─── Init ────────────────────────────────────────────────────
 function initGame() {
+  resetBiomes();
   ball = {
     x: BALL_X(),
     y: GROUND_Y(),
@@ -114,6 +115,7 @@ function updateHUD() {
   document.getElementById('lightsVal').textContent  = lightsCollected;
   document.getElementById('speedVal').textContent   = gameSpeed.toFixed(1) + 'x';
   document.getElementById('playerName').textContent = username;
+  document.getElementById('meterVal').textContent = Math.floor(score / 2) + 'm';
 }
 
 function buildLightBar() {
@@ -268,6 +270,7 @@ function update() {
   // Speed ramp
   gameSpeed = 3.5 + score * 0.004;
   bgOffset += gameSpeed * 0.4;
+  updateBiomes(Math.floor(score / 2), gameSpeed, canvas.width, canvas.height);
 
   // Spawn obstacles
   spawnTimer++;
@@ -356,73 +359,12 @@ function draw() {
     drawObstacles();
     drawBall();
     drawParticles();
+    drawForegroundTrees(ctx, canvas.width, canvas.height, GROUND_Y());
   }
 }
 
 function drawBackground() {
-  const w = canvas.width;
-  const h = canvas.height;
-  const gy = GROUND_Y();
-
-  // Sky
-  ctx.fillStyle = '#080808';
-  ctx.fillRect(0, 0, w, h);
-
-  // Distant ruins / buildings
-  ctx.fillStyle = '#0d0d0d';
-  const bWidths  = [55, 70, 45, 80, 60, 50];
-  const bHeights = [90, 120, 75, 100, 85, 65];
-  for (let i = 0; i < 6; i++) {
-    const bx = ((buildingOffsets[i] - bgOffset * 0.15) % (w + 100) + w + 100) % (w + 100) - 80;
-    ctx.fillRect(bx, gy - bHeights[i], bWidths[i], bHeights[i]);
-    // broken top edges
-    ctx.fillStyle = '#111';
-    ctx.fillRect(bx + 5,  gy - bHeights[i] - 8, 12, 10);
-    ctx.fillRect(bx + 28, gy - bHeights[i] - 5, 8,  7);
-    ctx.fillStyle = '#0d0d0d';
-  }
-
-  // Mid layer ruins
-  ctx.fillStyle = '#101010';
-  for (let i = 0; i < 5; i++) {
-    const mx = ((i * 200 - bgOffset * 0.4) % (w + 120) + w + 120) % (w + 120) - 60;
-    ctx.fillRect(mx, gy - 55, 35, 55);
-    ctx.fillRect(mx + 40, gy - 38, 20, 38);
-  }
-
-  // Ground
-  ctx.fillStyle = '#0e0e0e';
-  ctx.fillRect(0, gy, w, h - gy);
-
-  // Ground line
-  ctx.strokeStyle = '#252525';
-  ctx.lineWidth = 1.5;
-  ctx.beginPath();
-  ctx.moveTo(0, gy);
-  ctx.lineTo(w, gy);
-  ctx.stroke();
-
-  // Ground cracks / lines scrolling
-  ctx.strokeStyle = '#181818';
-  ctx.lineWidth = 1;
-  for (let i = 0; i < 10; i++) {
-    const lx = ((i * 95 - bgOffset) % (w + 40) + w + 40) % (w + 40) - 20;
-    ctx.beginPath();
-    ctx.moveTo(lx, gy + 2);
-    ctx.lineTo(lx + 18, gy + 10);
-    ctx.stroke();
-  }
-
-  // Faint grid lines in sky
-  ctx.strokeStyle = '#111111';
-  ctx.lineWidth = 0.5;
-  for (let i = 1; i < 5; i++) {
-    const ly = (h * 0.08) + i * (gy * 0.18);
-    ctx.beginPath();
-    ctx.moveTo(0, ly);
-    ctx.lineTo(w, ly);
-    ctx.stroke();
-  }
+  drawBiome(ctx, canvas.width, canvas.height, bgOffset, GROUND_Y());
 }
 
 function drawBall() {
