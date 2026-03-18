@@ -95,8 +95,9 @@ function initGame() {
   updateHUD();
   hidePrompt();
   buildLightBar();
-  state = 'running';
-}
+state = 'running';
+playMusic();
+showDialogue('start', ball.x, ball.y - 40);}
 
 // ─── HUD ─────────────────────────────────────────────────────
 function updateHUD() {
@@ -149,9 +150,10 @@ function jump() {
     ball.vy = JUMP_FORCE;
     ball.onGround = false;
     spawnParticles(ball.x, ball.y + ball.r, '#666', 6);
+    playSound('jump');
+    showDialogue('jump', ball.x, ball.y);
   }
 }
-
 function duck(on) {
   if (state !== 'running') return;
   duckHeld = on;
@@ -316,12 +318,14 @@ function update() {
       return;
     }
 
-    score          += l.behavior.score;
-    lightsCollected++;
-    ballGlowColor   = l.behavior.color;
-    collectedColors.push(l.behavior.color);
+  score          += l.behavior.score;
+lightsCollected++;
+ballGlowColor   = l.behavior.color;
+collectedColors.push(l.behavior.color);
 
-    spawnParticles(l.x, l.y, l.behavior.color, 12);
+spawnParticles(l.x, l.y, l.behavior.color, 12);
+playSound('collect');
+showDialogue('collect', ball.x, ball.y);
     showPrompt(
       l.behavior.name + ' light! +' + l.behavior.score + ' pts  (' + l.behavior.meaning + ')',
       1600
@@ -558,6 +562,9 @@ function drawParticles() {
 function triggerGameOver() {
   state = 'dead';
   spawnParticles(ball.x, ball.y, '#ff4444', 20);
+  playSound('gameover');
+  showDialogue('death', ball.x, ball.y);
+  stopMusic();
 
   // Show final stats
   document.getElementById('gameOverStats').style.display = 'block';
