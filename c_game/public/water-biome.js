@@ -7,13 +7,18 @@ let waterActive    = false;
 let waterDepth     = 0;       // how deep kyle is (positive = deeper)
 let waterSurface   = 0;       // y position of water surface
 let waterFloor     = 0;       // y position of sea floor
-let waterTapping   = false;   // is player tapping?
 let waterVY        = 0;       // kyle's vertical velocity in water
 let bridgeBroken   = false;
 let bridgeX        = 0;
 let bridgeAnim     = 0;       // bridge break animation timer
 let splashParticles = [];
 let waterEntered   = false;
+// ─── Fall State ───────────────────────────────────────────────
+let fallActive    = false;
+let fallY         = 0;      // how far kyle has fallen
+let fallSpeed     = 0;      // current fall speed
+let fallGlow      = 0;      // radioactive glow intensity from below
+let cliffOffset   = 0;      // scrolling cliff walls
 
 // ─── Water Physics Constants ──────────────────────────────────
 const WATER_FLOAT_FORCE  = -0.35;  // upward force when tapping
@@ -151,6 +156,12 @@ function initWaterBiome(canvasW, canvasH) {
   bridgeX       = canvasW * 0.6;
   bridgeAnim    = 0;
 
+  fallActive  = false;
+fallY       = 0;
+fallSpeed   = 0;
+fallGlow    = 0;
+cliffOffset = 0;
+
   bubbles.length      = 0;
   blackPatches.length = 0;
   waterEnemies.length = 0;
@@ -175,6 +186,94 @@ function resetWaterBiome() {
   sunkenShips.length  = 0;
 }
 
+// ─── Fall Sequence ────────────────────────────────────────────
+function startFall(ball, canvasH) {
+  fallActive    = true;
+  fallSpeed     = 1;
+  fallY         = 0;
+  waterSurface  = canvasH * 0.15;
+  waterFloor    = canvasH * 0.88;
+  ball.onGround = false;
+  ball.vy       = 0;
+}
+
+function updateFall(ball) {
+  if (!fallActive) return false;
+
+  // Accelerate fall
+  fallSpeed  += 0.15;
+  ball.y     += fallSpeed;
+  ball.angle += 0.04;
+  cliffOffset += fallSpeed * 0.5;
+
+  // Glow gets brighter as we fall deeper
+  fallGlow = Math.min(fallY / 200, 1);
+  fallY   += fallSpeed;
+
+  // Once kyle reaches water surface — end fall
+  if (ball.y >= waterSurface) {
+    ball.y     = waterSurface - ball.r;
+    fallActive = false;
+    waterEntered = true;
+    createSplash(ball.x, waterSurface);
+    return true; // signals fall is done
+  }
+  return false;
+}
+
+function drawFall(ctx, canvasW, canvasH, ball) {
+  if (!fallActive) return;
+
+  // Dark sky above
+  ctx.fillStyle = '#030303';
+  ctx.fillRect(0, 0, canvasW, canvasH);
+
+  // Cliff walls scrolling upward
+  for (let i = 0; i < 12; i++) {
+    const wy = ((i * 80 - cliffOffset) % (canvasH + 60) + canvasH + 60) % (canvasH + 60) - 30;
+
+    // Left cliff detail
+    ctx.fillStyle = '#0a0800';
+    ctx.fillRect(0, wy, 40 + Math.sin(i * 1.3) * 15, 50 + (i % 3) * 10);
+
+    // Right cliff detail
+    ctx.fillStyle = '#0a0800';
+    const rw = 35 + Math.cos(i * 1.1) * 12;
+    ctx.fillRect(canvasW - rw, wy + 20, rw, 45 + (i % 4) * 8);
+  }
+
+  // Radioactive glow from below
+  const glowAlpha = Math.min(fallGlow * 0.6, 0.5);
+  const glowGrad  = ctx.createLinearGradient(0, canvasH * 0.6, 0, canvasH);
+  glowGrad.addColorStop(0, 'transparent');
+  glowGrad.addColorStop(1, `rgba(200, 160, 0, ${glowAlpha})`);
+  ctx.fillStyle = glowGrad;
+  ctx.fillRect(0, canvasH * 0.6, canvasW, canvasH * 0.4);
+
+  // Falling particles (air rushing past)
+  ctx.fillStyle = 'rgba(200,160,0,0.15)';
+  for (let i = 0; i < 8; i++) {
+    const px = (i * 120 + cliffOffset * 0.3) % canvasW;
+    const py = ((i * 80 + cliffOffset * 2) % canvasH);
+    ctx.fillRect(px, py, 1, 8 + (i % 3) * 4);
+  }
+
+  // Water surface glimpse at bottom
+  if (fallGlow > 0.5) {
+    ctx.save();
+    ctx.globalAlpha = (fallGlow - 0.5) * 2;
+    ctx.fillStyle   = '#2a1f00';
+    ctx.fillRect(0, canvasH - 40, canvasW, 40);
+    ctx.strokeStyle = '#c8a000';
+    ctx.lineWidth   = 2;
+    ctx.beginPath();
+    ctx.moveTo(0, canvasH - 40);
+    ctx.lineTo(canvasW, canvasH - 40);
+    ctx.stroke();
+    ctx.restore();
+  }
+}
+
 // ─── Update Water Physics ─────────────────────────────────────
 function updateWaterPhysics(ball, tapping, frame) {
   if (!waterActive || !waterEntered) return;
@@ -194,9 +293,9 @@ function updateWaterPhysics(ball, tapping, frame) {
   // Gentle random rotation
 ball.angle += 0.008 + Math.sin(frameCount * 0.02) * 0.006;
   // Clamp to water bounds
-  if (ball.y - ball.r < waterSurface) {
-    ball.y  = waterSurface + ball.r;
-    waterVY = 1;
+if (ball.y - ball.r < waterSurface) {
+    ball.y  = waterSurface + ball.r + 2;
+    waterVY = Math.abs(waterVY) * 0.5;
   }
   if (ball.y + ball.r > waterFloor) {
     ball.y  = waterFloor - ball.r;
@@ -548,7 +647,6 @@ function checkWaterCollisions(ball) {
   if (by + br >= waterFloor) return true;
 
   // Hit ceiling (surface)
-  if (by - br <= waterSurface) return true;
 
   return false;
 }

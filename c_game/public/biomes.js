@@ -140,11 +140,10 @@ const newBiome = distance >= BIOMES.water.startAt  ? 'water'
     if (currentBiome === 'forest') {
       initBgTrees(canvasW, canvasH);
       initFireflies(canvasW, canvasH);
-    } else if (currentBiome === 'water') {
-      initWaterBiome(canvasW, canvasH);
-      // Stop obstacles for bridge warning zone
-      window.dispatchEvent(new CustomEvent('stopObstacles', { detail: { duration: 180 } }));
-    }
+ } else if (currentBiome === 'water') {
+  initWaterBiome(canvasW, canvasH);
+  window.dispatchEvent(new CustomEvent('stopObstacles', { detail: { duration: 180 } }));
+}
   }
 
   // Smooth transition blend
@@ -239,8 +238,7 @@ function drawSky(ctx, canvasW, canvasH) {
 }
 
 // ─── Draw City Biome ─────────────────────────────────────────
-function drawCity(ctx, canvasW, canvasH, bgOffset, groundY) {
-  // Distant orange glow on horizon
+function drawCity(ctx, canvasW, canvasH, bgOffset, groundY, stopTimer = 180) {  // Distant orange glow on horizon
   ctx.save();
   ctx.globalAlpha = 0.12;
   const glow = ctx.createRadialGradient(
@@ -285,6 +283,103 @@ function drawCity(ctx, canvasW, canvasH, bgOffset, groundY) {
     ctx.fillRect(mx, groundY - 55, 35, 55);
     ctx.fillRect(mx + 40, groundY - 38, 20, 38);
   }
+}
+// ─── Pre-Water Transition Zone ───────────────────────────
+if (window._stopTimer < 180) {
+  const t = 1 - (obstacleStopTimer / 180); // 0 to 1 as timer counts down
+
+  // Sky shifts to sickly green/yellow
+  ctx.save();
+  ctx.globalAlpha = t * 0.3;
+  ctx.fillStyle = '#1a1500';
+  ctx.fillRect(0, 0, canvasW, canvasH);
+  ctx.restore();
+
+  // Smaller broken houses
+  ctx.fillStyle = '#0a0a0a';
+  for (let i = 0; i < 6; i++) {
+    const hx = ((i * 120 - bgOffset * 0.8) % (canvasW + 80) + canvasW + 80) % (canvasW + 80) - 40;
+    const hh = 20 + (i % 3) * 15;
+    const hw = 25 + (i % 4) * 10;
+    ctx.fillRect(hx, groundY - hh, hw, hh);
+    // Broken top
+    ctx.fillStyle = '#111';
+    ctx.beginPath();
+    ctx.moveTo(hx, groundY - hh);
+    ctx.lineTo(hx + hw * 0.4, groundY - hh - 8);
+    ctx.lineTo(hx + hw * 0.7, groundY - hh - 3);
+    ctx.lineTo(hx + hw, groundY - hh);
+    ctx.fill();
+    ctx.fillStyle = '#0a0a0a';
+  }
+
+  // Dead thin trees
+  ctx.strokeStyle = '#111111';
+  for (let i = 0; i < 5; i++) {
+    const tx = ((i * 150 - bgOffset * 1.0) % (canvasW + 60) + canvasW + 60) % (canvasW + 60) - 30;
+    const th = 35 + (i % 3) * 15;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(tx, groundY);
+    ctx.lineTo(tx, groundY - th);
+    ctx.stroke();
+    // Small branches
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(tx, groundY - th * 0.6);
+    ctx.lineTo(tx - 12, groundY - th * 0.8);
+    ctx.moveTo(tx, groundY - th * 0.75);
+    ctx.lineTo(tx + 10, groundY - th * 0.9);
+    ctx.stroke();
+  }
+
+  // Bush clusters
+  ctx.fillStyle = '#0d0d08';
+  for (let i = 0; i < 7; i++) {
+    const bx = ((i * 100 - bgOffset * 1.1) % (canvasW + 50) + canvasW + 50) % (canvasW + 50) - 25;
+    ctx.beginPath();
+    ctx.arc(bx, groundY - 6, 8 + (i % 3) * 4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(bx + 10, groundY - 4, 6 + (i % 2) * 3, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // Barbwire fence on ground
+  ctx.strokeStyle = '#222211';
+  ctx.lineWidth = 1;
+  for (let i = 0; i < 10; i++) {
+    const fx = ((i * 80 - bgOffset * 1.3) % (canvasW + 40) + canvasW + 40) % (canvasW + 40) - 20;
+    // Fence post
+    ctx.beginPath();
+    ctx.moveTo(fx, groundY);
+    ctx.lineTo(fx, groundY - 18);
+    ctx.stroke();
+    // Wire
+    ctx.beginPath();
+    ctx.moveTo(fx - 40, groundY - 12);
+    ctx.lineTo(fx + 40, groundY - 12);
+    ctx.stroke();
+    // Barbs
+    for (let b = -30; b <= 30; b += 15) {
+      ctx.beginPath();
+      ctx.moveTo(fx + b, groundY - 12);
+      ctx.lineTo(fx + b - 3, groundY - 16);
+      ctx.moveTo(fx + b, groundY - 12);
+      ctx.lineTo(fx + b + 3, groundY - 8);
+      ctx.stroke();
+    }
+  }
+
+  // Radioactive ground tint
+  ctx.save();
+  ctx.globalAlpha = t * 0.15;
+  const groundGrad = ctx.createLinearGradient(0, groundY - 20, 0, groundY + 30);
+  groundGrad.addColorStop(0, 'transparent');
+  groundGrad.addColorStop(1, '#c8a000');
+  ctx.fillStyle = groundGrad;
+  ctx.fillRect(0, groundY - 20, canvasW, 50);
+  ctx.restore();
 }
 
 // ─── Draw Forest Biome ───────────────────────────────────────
@@ -480,12 +575,21 @@ ctx.font      = '11px Georgia, serif';
 }
 
 // ─── Main Draw ───────────────────────────────────────────────
-function drawBiome(ctx, canvasW, canvasH, bgOffset, groundY) {
+function drawBiome(ctx, canvasW, canvasH, bgOffset, groundY, frame) {
   if (currentBiome === 'water') {
-    drawWaterBiome(ctx, canvasW, canvasH, frameCount);
+    drawWaterBiome(ctx, canvasW, canvasH, frame);
     drawBiomePopup(ctx, canvasW, canvasH);
     return;
   }
+  drawSky(ctx, canvasW, canvasH);
+  if (currentBiome === 'city') {
+    drawCity(ctx, canvasW, canvasH, bgOffset, groundY, window._stopTimer || 180);
+  } else if (currentBiome === 'forest') {
+    drawForest(ctx, canvasW, canvasH, bgOffset, groundY);
+  }
+  drawGround(ctx, canvasW, canvasH, bgOffset, groundY);
+  drawBiomePopup(ctx, canvasW, canvasH);
+}
   drawSky(ctx, canvasW, canvasH);
   if (currentBiome === 'city') {
     drawCity(ctx, canvasW, canvasH, bgOffset, groundY);
@@ -494,13 +598,15 @@ function drawBiome(ctx, canvasW, canvasH, bgOffset, groundY) {
   }
   drawGround(ctx, canvasW, canvasH, bgOffset, groundY);
   drawBiomePopup(ctx, canvasW, canvasH);
-}
 
 // ─── Reset for new game ──────────────────────────────────────
 function resetBiomes() {
-  const nextBiome = Math.random() > 0.5 ? 'forest' : 'water';
-  BIOMES.forest.startAt = nextBiome === 'forest' ? 30 : 99999;
-  BIOMES.water.startAt  = nextBiome === 'water'  ? 30 : 99999;
+  //const nextBiome = Math.random() > 0.5 ? 'forest' : 'water';
+  //BIOMES.forest.startAt = nextBiome === 'forest' ? 30 : 99999;
+  //BIOMES.water.startAt  = nextBiome === 'water'  ? 30 : 99999;
+  const nextBiome = 'water';
+BIOMES.forest.startAt = 99999;
+BIOMES.water.startAt  = 30;
   currentBiome    = 'city';
   biomeProgress   = 0;
   lastBiome       = 'city';

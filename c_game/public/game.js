@@ -73,6 +73,7 @@ let duckHeld;
 let spawnTimer, lightTimer;
 let obstaclesStopped = false;
 let obstacleStopTimer = 0;
+let waterTapping = false;
 let collectedColors = [];
 let promptTimeout = null;
 let bgOffset = 0;
@@ -107,6 +108,7 @@ function initGame() {
  updateHUD();
   hidePrompt();
   buildLightBar();
+  triggerBiomePopup('city');
   state = 'running';
   playMusic();
   showDialogue('start', ball.x, ball.y - 40);
@@ -299,15 +301,21 @@ if (checkWaterCollisions(ball)) {
   // Speed ramp
   gameSpeed = 3.5 + score * 0.004;
   bgOffset += gameSpeed * 0.4;
+  window._stopTimer = obstacleStopTimer;
  updateBiomes(Math.floor(score / 2), gameSpeed, canvas.width, canvas.height);
 updateBiomeFrame();
 if (currentBiome === 'water') {
   updateWaterWorld(canvas.width, canvas.height, gameSpeed, frameCount);
 }
-if (currentBiome === 'water' && !waterEntered) {
-  waterEntered = true;
-  ball.y = waterSurface + ball.r + 20;
-  createSplash(ball.x, waterSurface);
+if (currentBiome === 'water' && !waterEntered && !fallActive) {
+  startFall(ball, canvas.height);
+}
+
+if (fallActive) {
+  const done = updateFall(ball);
+  if (done) {
+    triggerBiomePopup('water');
+  }
 }
 
   // Spawn obstacles
@@ -400,6 +408,13 @@ showDialogue('collect', ball.x, ball.y);
 
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  if (fallActive) {
+    drawFall(ctx, canvas.width, canvas.height, ball);
+    drawBall();
+    return;
+  }
+
   drawBackground();
   if (state !== 'idle') {
     drawLights();
@@ -413,8 +428,8 @@ function draw() {
 
 // ─── Draw Bridge ─────────────────────────────────────────────
 function drawBridge() {
-  if (waterEntered) return;
-if (currentBiome !== 'water' && !obstaclesStopped) return;
+  if (waterEntered || fallActive) return;
+  if (currentBiome !== 'water' && !obstaclesStopped) return;
 
   const gy = GROUND_Y();
   const w  = canvas.width;
@@ -442,7 +457,7 @@ if (currentBiome !== 'water' && !obstaclesStopped) return;
   ctx.stroke();
 
   // WARNING sign before water
-  if (obstaclesStopped && obstacleStopTimer > 60) {
+if (obstaclesStopped && obstacleStopTimer > 60 && currentBiome !== 'water') {
     ctx.save();
     ctx.fillStyle = '#ff4400';
     ctx.font      = 'bold 14px monospace';
@@ -453,22 +468,9 @@ if (currentBiome !== 'water' && !obstaclesStopped) return;
     ctx.fillText('prepare for water...', w / 2, gy - 32);
     ctx.restore();
   }
-
-  // Check if ball reached end of bridge — enter water
- if (ball && obstaclesStopped && obstacleStopTimer < 60) {
-  if (!waterEntered) {
-    waterEntered = true;
-    ball.y       = waterSurface + ball.r + 10;
-    createSplash(ball.x, waterSurface);
-  }
-}
 }
 function drawBackground() {
-  if (currentBiome === 'water') {
-    drawWaterBiome(ctx, canvas.width, canvas.height, frameCount);
-  } else {
-    drawBiome(ctx, canvas.width, canvas.height, bgOffset, GROUND_Y());
-  }
+  drawBiome(ctx, canvas.width, canvas.height, bgOffset, GROUND_Y(), frameCount);
 }
 
 function drawBall() {
