@@ -1,8 +1,20 @@
 // ─── biomes.js ───────────────────────────────────────────────
 // Handles all biome backgrounds, transitions, and location popups
 // ─────────────────────────────────────────────────────────────
+function updateBiomeFrame() {}
 
-// ─── Biome Definitions ───────────────────────────────────────
+function triggerBiomePopup(biomeId) {
+  popupBiome      = BIOMES[biomeId];
+  biomePopupState = 'fadein';
+  biomePopupAlpha = 0;
+  biomePopupTimer = 0;
+}
+
+function forceSetBiome(biomeId) {
+  currentBiome  = biomeId;
+  biomeProgress = 1;
+}
+
 const BIOMES = {
   city: {
     id:       'city',
@@ -16,7 +28,14 @@ const BIOMES = {
     name:     'Dark Forest',
     subtitle: 'You\'ve entered the darkness...',
     color:    '#00ff88',
-    startAt:  50-80,
+    startAt:  100,
+  },
+water: {
+    id:       'water',
+    name:     'Death Ocean',
+    subtitle: 'The water remembers everyone it takes...',
+    color:    '#f0c040',
+    startAt:  100,
   },
 };
 
@@ -103,8 +122,10 @@ function initFireflies(canvasW, canvasH) {
 // ─── Main Update ─────────────────────────────────────────────
 function updateBiomes(distance, gameSpeed, canvasW, canvasH) {
   // Check biome transition
-const newBiome = distance >= BIOMES.forest.startAt ? 'forest' : 'city';
-  if (newBiome !== currentBiome) {
+const newBiome = distance >= BIOMES.water.startAt  ? 'water'
+               : distance >= BIOMES.forest.startAt ? 'forest'
+               : 'city';
+                 if (newBiome !== currentBiome) {
     lastBiome    = currentBiome;
     currentBiome = newBiome;
     biomeProgress = 0;
@@ -119,6 +140,10 @@ const newBiome = distance >= BIOMES.forest.startAt ? 'forest' : 'city';
     if (currentBiome === 'forest') {
       initBgTrees(canvasW, canvasH);
       initFireflies(canvasW, canvasH);
+    } else if (currentBiome === 'water') {
+      initWaterBiome(canvasW, canvasH);
+      // Stop obstacles for bridge warning zone
+      window.dispatchEvent(new CustomEvent('stopObstacles', { detail: { duration: 180 } }));
     }
   }
 
@@ -442,14 +467,13 @@ function drawBiomePopup(ctx, canvasW, canvasH) {
 
   // Title
   ctx.fillStyle   = popupBiome.color;
-  ctx.font        = 'bold 22px monospace';
-  ctx.textAlign   = 'center';
+ctx.font        = 'bold 22px Georgia, serif';  ctx.textAlign   = 'center';
   ctx.letterSpacing = '4px';
   ctx.fillText(popupBiome.name.toUpperCase(), cx, cy + 2);
 
-  // Subtitle
-  ctx.fillStyle = 'rgba(255,255,255,0.5)';
-  ctx.font      = '11px monospace';
+// Subtitle
+ctx.fillStyle = 'rgba(255,255,255,0.5)';
+ctx.font      = '11px Georgia, serif';
   ctx.fillText(popupBiome.subtitle, cx, cy + 22);
 
   ctx.restore();
@@ -457,6 +481,11 @@ function drawBiomePopup(ctx, canvasW, canvasH) {
 
 // ─── Main Draw ───────────────────────────────────────────────
 function drawBiome(ctx, canvasW, canvasH, bgOffset, groundY) {
+  if (currentBiome === 'water') {
+    drawWaterBiome(ctx, canvasW, canvasH, frameCount);
+    drawBiomePopup(ctx, canvasW, canvasH);
+    return;
+  }
   drawSky(ctx, canvasW, canvasH);
   if (currentBiome === 'city') {
     drawCity(ctx, canvasW, canvasH, bgOffset, groundY);
@@ -469,7 +498,9 @@ function drawBiome(ctx, canvasW, canvasH, bgOffset, groundY) {
 
 // ─── Reset for new game ──────────────────────────────────────
 function resetBiomes() {
-    BIOMES.forest.startAt = Math.floor(Math.random() * (100 - 50 + 1)) + 50;
+  const nextBiome = Math.random() > 0.5 ? 'forest' : 'water';
+  BIOMES.forest.startAt = nextBiome === 'forest' ? 30 : 99999;
+  BIOMES.water.startAt  = nextBiome === 'water'  ? 30 : 99999;
   currentBiome    = 'city';
   biomeProgress   = 0;
   lastBiome       = 'city';

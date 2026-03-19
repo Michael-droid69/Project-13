@@ -71,6 +71,8 @@ let score, lightsCollected, gameSpeed, frameCount;
 let ballGlowColor;
 let duckHeld;
 let spawnTimer, lightTimer;
+let obstaclesStopped = false;
+let obstacleStopTimer = 0;
 let collectedColors = [];
 let promptTimeout = null;
 let bgOffset = 0;
@@ -102,12 +104,13 @@ function initGame() {
   spawnTimer     = 0;
   lightTimer     = 0;
 
-  updateHUD();
+ updateHUD();
   hidePrompt();
   buildLightBar();
-state = 'running';
-playMusic();
-showDialogue('start', ball.x, ball.y - 40);}
+  state = 'running';
+  playMusic();
+  showDialogue('start', ball.x, ball.y - 40);
+}
 
 // ─── HUD ─────────────────────────────────────────────────────
 function updateHUD() {
@@ -157,6 +160,12 @@ function hidePrompt() {
 // ─── Controls ────────────────────────────────────────────────
 function jump() {
   if (state !== 'running') return;
+
+  if (currentBiome === 'water' && waterEntered) {
+  waterVY = -3.5;
+  return;
+}
+
   if (ball.onGround && !ball.ducking) {
     ball.vy = JUMP_FORCE;
     ball.onGround = false;
@@ -218,11 +227,20 @@ obstacleList.push({
 }
 
 function spawnLight() {
-  const b    = BEHAVIORS[Math.floor(Math.random() * BEHAVIORS.length)];
-  const gy   = GROUND_Y();
-  const yPos = b.deadly
-    ? gy - 22
-    : gy - 22 - Math.random() * 85;
+  const b  = BEHAVIORS[Math.floor(Math.random() * BEHAVIORS.length)];
+  const gy = GROUND_Y();
+  let yPos;
+
+  if (currentBiome === 'water' && waterEntered) {
+    // Scatter lights all over the water depth
+    yPos = b.deadly
+      ? waterSurface + (waterFloor - waterSurface) * (0.3 + Math.random() * 0.5)
+      : waterSurface + (waterFloor - waterSurface) * Math.random() * 0.85;
+  } else {
+    yPos = b.deadly
+      ? gy - 22
+      : gy - 22 - Math.random() * 85;
+  }
 
   lightList.push({
     x: canvas.width + 20,
@@ -250,35 +268,64 @@ function update() {
   if (state !== 'running') return;
   frameCount++;
 
-  const gy = GROUND_Y();
+const gy = GROUND_Y();
 
-  // Physics
+if (currentBiome === 'water' && waterEntered) {
+// ─── Water Physics ───────────────────────────────────────
+updateWaterPhysics(ball, waterTapping, frameCount);
+drawDepthMeter(ctx, canvas.width, canvas.height);
+
+if (checkWaterCollisions(ball)) {
+  triggerGameOver();
+  return;
+}
+} else {
+  // ─── Ground Physics ───────────────────────────────────────
   ball.vy += GRAVITY;
   ball.y  += ball.vy;
   ball.angle += 0.09;
 
   if (ball.y >= gy) {
-    ball.y       = gy;
-    ball.vy      = 0;
+    ball.y        = gy;
+    ball.vy       = 0;
     ball.onGround = true;
     ball.ducking  = duckHeld;
   } else {
     ball.onGround = false;
     ball.ducking  = false;
   }
+}
 
   // Speed ramp
   gameSpeed = 3.5 + score * 0.004;
   bgOffset += gameSpeed * 0.4;
-  updateBiomes(Math.floor(score / 2), gameSpeed, canvas.width, canvas.height);
+ updateBiomes(Math.floor(score / 2), gameSpeed, canvas.width, canvas.height);
+updateBiomeFrame();
+if (currentBiome === 'water') {
+  updateWaterWorld(canvas.width, canvas.height, gameSpeed, frameCount);
+}
+if (currentBiome === 'water' && !waterEntered) {
+  waterEntered = true;
+  ball.y = waterSurface + ball.r + 20;
+  createSplash(ball.x, waterSurface);
+}
 
   // Spawn obstacles
+ if (obstaclesStopped) {
+  obstacleStopTimer--;
+  if (obstacleStopTimer <= 0) {
+    obstaclesStopped = false;
+  }
+} else {
   spawnTimer++;
   const spawnInterval = Math.max(52, 105 - score * 0.05);
   if (spawnTimer >= spawnInterval) {
-    spawnObstacle();
+    if (currentBiome !== 'water') {
+  spawnObstacle();
+}
     spawnTimer = 0;
   }
+}
 
   // Spawn lights
   lightTimer++;
@@ -357,14 +404,71 @@ function draw() {
   if (state !== 'idle') {
     drawLights();
     drawObstacles();
+    drawBridge();
     drawBall();
     drawParticles();
     drawForegroundTrees(ctx, canvas.width, canvas.height, GROUND_Y());
   }
 }
 
+// ─── Draw Bridge ─────────────────────────────────────────────
+function drawBridge() {
+  if (waterEntered) return;
+if (currentBiome !== 'water' && !obstaclesStopped) return;
+
+  const gy = GROUND_Y();
+  const w  = canvas.width;
+
+  // Bridge planks scrolling
+  ctx.fillStyle   = '#2a1a00';
+  ctx.strokeStyle = '#3a2a00';
+  ctx.lineWidth   = 1;
+
+  for (let i = 0; i < 8; i++) {
+    const bx = ((i * 80 - bgOffset * 1.2) % (w + 60) + w + 60) % (w + 60) - 30;
+    ctx.fillRect(bx, gy - 10, 60, 10);
+    ctx.strokeRect(bx, gy - 10, 60, 10);
+  }
+
+  // Bridge ropes
+  ctx.strokeStyle = '#1a1000';
+  ctx.lineWidth   = 2;
+  ctx.beginPath();
+  ctx.moveTo(0, gy - 30);
+  for (let x = 0; x < w; x += 10) {
+    const y = gy - 30 + Math.sin((x + bgOffset) * 0.05) * 5;
+    ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+
+  // WARNING sign before water
+  if (obstaclesStopped && obstacleStopTimer > 60) {
+    ctx.save();
+    ctx.fillStyle = '#ff4400';
+    ctx.font      = 'bold 14px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('⚠ BRIDGE ENDS AHEAD', w / 2, gy - 50);
+    ctx.fillStyle = '#ffaa00';
+    ctx.font      = '11px monospace';
+    ctx.fillText('prepare for water...', w / 2, gy - 32);
+    ctx.restore();
+  }
+
+  // Check if ball reached end of bridge — enter water
+ if (ball && obstaclesStopped && obstacleStopTimer < 60) {
+  if (!waterEntered) {
+    waterEntered = true;
+    ball.y       = waterSurface + ball.r + 10;
+    createSplash(ball.x, waterSurface);
+  }
+}
+}
 function drawBackground() {
-  drawBiome(ctx, canvas.width, canvas.height, bgOffset, GROUND_Y());
+  if (currentBiome === 'water') {
+    drawWaterBiome(ctx, canvas.width, canvas.height, frameCount);
+  } else {
+    drawBiome(ctx, canvas.width, canvas.height, bgOffset, GROUND_Y());
+  }
 }
 
 function drawBall() {
@@ -569,9 +673,10 @@ window.addEventListener('load', () => {
       padding: 10px 36px; font-size: 14px; font-weight: bold;
       border-radius: 4px; cursor: pointer; font-family: monospace;
     `;
-    readyBtn.addEventListener('click', () => {
+  readyBtn.addEventListener('click', () => {
       document.getElementById('overlay').style.display = 'none';
       initGame();
+      console.log('initGame called, biome:', currentBiome);
     });
     document.getElementById('overlayButtons').prepend(readyBtn);
   }
@@ -591,7 +696,9 @@ document.getElementById('playAgainBtn').addEventListener('click', () => {
 });
 
 document.getElementById('jumpBtn').addEventListener('click', jump);
-
+document.getElementById('jumpBtn').addEventListener('mouseup',    () => { waterTapping = false; });
+document.getElementById('jumpBtn').addEventListener('touchend',   () => { waterTapping = false; });
+document.getElementById('jumpBtn').addEventListener('mouseleave', () => { waterTapping = false; });
 document.getElementById('duckBtn').addEventListener('mousedown',  () => duck(true));
 document.getElementById('duckBtn').addEventListener('mouseup',    () => duck(false));
 document.getElementById('duckBtn').addEventListener('mouseleave', () => duck(false));
@@ -611,6 +718,7 @@ document.addEventListener('keydown', e => {
 
 document.addEventListener('keyup', e => {
   if (e.code === 'ArrowDown') duck(false);
+  if (e.code === 'Space' || e.code === 'ArrowUp') waterTapping = false;
 });
 
 const usernameInputEl = document.getElementById('usernameInput');
@@ -619,6 +727,10 @@ if (usernameInputEl) {
     if (e.code === 'Enter') document.getElementById('startBtn').click();
   });
 }
-
+window.addEventListener('stopObstacles', (e) => {
+  obstaclesStopped  = true;
+  obstacleStopTimer = e.detail.duration;
+  obstacleList      = [];
+});
 // ─── Start Loop ──────────────────────────────────────────────
 loop();
